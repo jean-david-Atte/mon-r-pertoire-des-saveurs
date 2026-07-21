@@ -575,7 +575,7 @@
             btn.innerHTML = '<span>Inscription...</span> <i class="fas fa-spinner fa-spin"></i>';
 
             try {
-                const rep = await fetch('api.php?action=inscription', {
+                const rep = await fetch('/api?action=inscription', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ nom, email, mot_passe: motPasse })

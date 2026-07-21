@@ -840,7 +840,7 @@
             btn.innerHTML = '<span>Connexion...</span> <i class="fas fa-spinner fa-spin"></i>';
 
             try {
-                const rep = await fetch('api.php?action=connexion', {
+                const rep = await fetch('/api?action=connexion', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, mot_passe: motPasse })
@@ -893,7 +893,7 @@
             }
 
             try {
-                const rep = await fetch('api.php?action=reinitialisation', {
+                const rep = await fetch('/api?action=reinitialisation', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email })
