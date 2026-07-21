@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Répertoire des Saveurs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            background: #0a0a0a;
+            padding: 20px;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        /* ============================================================
+           FOND AVEC LES 3 IMAGES (positions identiques)
+           ============================================================ */
+        .food-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .food-bg .bg-image {
+            position: absolute;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0.08;
+            animation: floatBg 20s ease-in-out infinite alternate;
+        }
+
+        /* Image 1 : en haut à droite */
+        .food-bg .bg-image:nth-child(1) {
+            top: -50px;
+            right: -50px;
+            background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTeyCq2_G79yFh_3UBB0A-mg2N2857B1qXogBp79mN6DA&s=10');
+            animation-delay: 0s;
+            width: 400px;
+            height: 400px;
+        }
+
+        /* Image 2 : en bas à gauche */
+        .food-bg .bg-image:nth-child(2) {
+            bottom: -80px;
+            left: -80px;
+            background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSYnMUaCLmG3MEJqJPY7usjrzZfanhvgVklym1byYW5VA&s=10');
+            animation-delay: -7s;
+            width: 350px;
+            height: 350px;
+        }
+
+        /* Image 3 : centrée en arrière-plan */
+        .food-bg .bg-image:nth-child(3) {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-image: url('https://i.pinimg.com/736x/95/00/20/950020f63c6fb51628f38be92cdaa183.jpg');
+            animation-delay: -14s;
+            width: 500px;
+            height: 500px;
+            opacity: 0.04;
+        }
+
+        @keyframes floatBg {
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+            100% { transform: translate(30px, -20px) scale(1.1) rotate(10deg); }
+        }
+
+        .food-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(10, 10, 10, 0.6) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 50%, rgba(10, 10, 10, 0.6) 0%, transparent 60%),
+                radial-gradient(ellipse at 50% 100%, rgba(10, 10, 10, 0.8) 0%, transparent 50%);
+            z-index: 1;
+        }
+
+        .grid-pattern {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* ============================================================
+           PARTICULES FLOTTANTES (ingrédients)
+           ============================================================ */
+        .floating-ingredients {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .floating-ingredients .ingredient {
+            position: absolute;
+            font-size: 1.8rem;
+            opacity: 0.06;
+            animation: floatIngredient 15s ease-in-out infinite;
+        }
+
+        .floating-ingredients .ingredient:nth-child(1) { top: 10%; left: 5%; animation-delay: 0s; font-size: 2.5rem; }
+        .floating-ingredients .ingredient:nth-child(2) { top: 20%; right: 8%; animation-delay: -3s; font-size: 2rem; }
+        .floating-ingredients .ingredient:nth-child(3) { bottom: 25%; left: 3%; animation-delay: -6s; font-size: 3rem; }
+        .floating-ingredients .ingredient:nth-child(4) { bottom: 15%; right: 5%; animation-delay: -9s; font-size: 2.2rem; }
+        .floating-ingredients .ingredient:nth-child(5) { top: 50%; left: 2%; animation-delay: -12s; font-size: 1.8rem; }
+        .floating-ingredients .ingredient:nth-child(6) { top: 40%; right: 2%; animation-delay: -15s; font-size: 2rem; }
+
+        @keyframes floatIngredient {
+            0% { transform: translate(0, 0) rotate(0deg) scale(1); }
+            25% { transform: translate(20px, -30px) rotate(90deg) scale(1.1); }
+            50% { transform: translate(-10px, -50px) rotate(180deg) scale(0.9); }
+            75% { transform: translate(30px, -20px) rotate(270deg) scale(1.05); }
+            100% { transform: translate(0, 0) rotate(360deg) scale(1); }
+        }
+
+        /* ============================================================
+           BOX DE CONNEXION / INSCRIPTION (interface IDENTIQUE)
+           ============================================================ */
+        .conteneur-connexion {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 560px;
+            background: rgba(10, 10, 10, 0.75);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border-radius: 32px;
+            padding: 48px 44px 40px;
+            border: 1px solid rgba(255, 215, 150, 0.08);
+            box-shadow: 
+                0 40px 80px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 215, 150, 0.05);
+            animation: fadeInUp 0.8s ease;
+            margin: 20px auto;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ============================================================
+           BANDE DÉCORATIVE
+           ============================================================ */
+        .food-deco {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 28px;
+            justify-content: center;
+            align-items: center;
+        }
+        .food-deco span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #c0392b;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+        .food-deco span:nth-child(2) { background: #d4a050; width: 14px; height: 14px; }
+        .food-deco span:nth-child(3) { background: #e67e22; }
+        .food-deco span:nth-child(4) { background: #2d5a3d; width: 14px; height: 14px; }
+        .food-deco span:nth-child(5) { background: #c0392b; }
+        .food-deco span:nth-child(6) { background: #d4a050; }
+        .food-deco span:nth-child(7) { background: #e67e22; width: 14px; height: 14px; }
+
+        .food-deco:hover span {
+            animation: bounceDeco 0.5s ease;
+        }
+
+        @keyframes bounceDeco {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        /* ============================================================
+           LOGO : ASSIETTE AVEC COUVERTS (IDENTIQUE pour les deux pages)
+           ============================================================ */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .logo-symbol {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.8rem;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #c0392b, #e67e22);
+            color: white;
+            margin-bottom: 14px;
+            box-shadow: 0 12px 50px rgba(192, 57, 43, 0.3);
+            transition: transform 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .logo-symbol::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #d4a050, #c0392b, #e67e22);
+            z-index: -1;
+            animation: spinGradient 4s linear infinite;
+            background-size: 300% 300%;
+        }
+
+        @keyframes spinGradient {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .logo-symbol:hover { transform: scale(1.05) rotate(-5deg); }
+
+        .logo-container h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.02em;
+        }
+        .logo-container h1 span { 
+            color: #d4a050;
+            position: relative;
+        }
+        .logo-container h1 span::after {
+            content: '✦';
+            font-size: 0.6rem;
+            color: #d4a050;
+            margin-left: 4px;
+        }
+        .logo-container .sous-titre {
+            color: rgba(255,215,150,0.3);
+            font-size: 0.7rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* ============================================================
+           MESSAGES
+           ============================================================ */
+        .message-erreur {
+            background: rgba(192, 57, 43, 0.15);
+            color: #e74c3c;
+            padding: 12px 16px;
+            border-radius: 14px;
+            margin-bottom: 16px;
+            font-size: 0.85rem;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid rgba(192, 57, 43, 0.2);
+        }
+        .message-erreur.show { display: flex; }
+        .message-succes {
+            background: rgba(45, 90, 61, 0.15);
+            color: #4a8c5c;
+            padding: 12px 16px;
+            border-radius: 14px;
+            margin-bottom: 16px;
+            font-size: 0.85rem;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid rgba(45, 90, 61, 0.2);
+        }
+        .message-succes.show { display: flex; }
+
+        /* ============================================================
+           RÔLES (Admin / Utilisateur)
+           ============================================================ */
+        .roles-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 26px;
+        }
+
+        .role-card {
+            padding: 18px 14px;
+            border-radius: 18px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .role-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(212,160,80,0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .role-card:hover::before { opacity: 1; }
+        .role-card:hover { 
+            transform: translateY(-3px); 
+            border-color: rgba(255,215,150,0.1);
+        }
+        .role-card.selectionne {
+            background: rgba(212, 160, 80, 0.08);
+            border-color: #d4a050;
+            box-shadow: 0 0 40px rgba(212, 160, 80, 0.05);
+        }
+        .role-card .role-icon { 
+            font-size: 2rem; 
+            display: block; 
+            margin-bottom: 6px; 
+            position: relative;
+            z-index: 1;
+        }
+        .role-card .role-nom { 
+            font-weight: 600; 
+            font-size: 0.9rem; 
+            color: #fff;
+            position: relative;
+            z-index: 1;
+        }
+        .role-card .role-desc { 
+            font-size: 0.7rem; 
+            color: rgba(255,255,255,0.35);
+            margin-top: 2px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ============================================================
+           FORMULAIRE (sans icônes)
+           ============================================================ */
+        .form-groupe {
+            margin-bottom: 18px;
+            position: relative;
+        }
+        .form-groupe label {
+            display: block;
+            font-weight: 500;
+            font-size: 0.75rem;
+            color: rgba(255,215,150,0.4);
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .form-groupe input {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.03);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+        .form-groupe input:focus {
+            border-color: rgba(212, 160, 80, 0.3);
+            outline: none;
+            background: rgba(255,255,255,0.06);
+            box-shadow: 0 0 0 4px rgba(212, 160, 80, 0.05);
+        }
+        .form-groupe input::placeholder { color: rgba(255,255,255,0.15); }
+
+        .form-groupe.cache {
+            display: none !important;
+        }
+
+        .form-options {
+            display: flex;
+            justify-content: flex-end;
+            margin: 6px 0 20px;
+            font-size: 0.8rem;
+        }
+        .form-options a {
+            color: rgba(255,215,150,0.25);
+            text-decoration: none;
+            transition: color 0.3s;
+            font-size: 0.75rem;
+        }
+        .form-options a:hover { color: #d4a050; }
+
+        /* ============================================================
+           BOUTONS
+           ============================================================ */
+        .btn-connexion {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 16px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 4px;
+            background: linear-gradient(135deg, #c0392b, #e67e22);
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-connexion::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #d4a050, #c0392b);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .btn-connexion:hover::before { opacity: 1; }
+        .btn-connexion:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 16px 50px rgba(192, 57, 43, 0.25);
+        }
+        .btn-connexion:active { transform: translateY(0); }
+        .btn-connexion:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .btn-connexion span, .btn-connexion i {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-connexion.btn-utilisateur {
+            background: linear-gradient(135deg, #2d5a3d, #4a8c5c);
+        }
+        .btn-connexion.btn-utilisateur::before {
+            background: linear-gradient(135deg, #3d7a4d, #5a9c6c);
+        }
+        .btn-connexion.btn-utilisateur:hover {
+            box-shadow: 0 16px 50px rgba(45, 90, 61, 0.25);
+        }
+
+        .btn-inscription {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 16px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            background: transparent;
+            color: rgba(255,215,150,0.3);
+            margin-top: 12px;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+        .btn-inscription:hover {
+            background: rgba(255,255,255,0.03);
+            color: rgba(255,215,150,0.6);
+            border-color: rgba(255,215,150,0.08);
+            transform: translateY(-2px);
+        }
+
+        .separateur {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 18px 0;
+            color: rgba(255,255,255,0.04);
+            font-size: 0.65rem;
+        }
+        .separateur::before, .separateur::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.03);
+        }
+
+        /* ============================================================
+           MESSAGE INFO ADMIN
+           ============================================================ */
+        .message-info {
+            text-align: center;
+            color: rgba(255,215,150,0.12);
+            font-size: 0.7rem;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.02);
+        }
+        .message-info .mot-passe-demo {
+            background: rgba(212,160,80,0.05);
+            padding: 3px 18px;
+            border-radius: 20px;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #d4a050;
+            display: inline-block;
+            margin: 3px 0;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            border: 1px solid rgba(212,160,80,0.05);
+        }
+
+        /* ============================================================
+           MODAL
+           ============================================================ */
+        .modal-oublie {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(20px);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-oublie.actif { display: flex; }
+        .modal-oublie .modal-content {
+            background: rgba(20, 20, 20, 0.95);
+            max-width: 440px;
+            width: 100%;
+            padding: 40px 36px;
+            border-radius: 28px;
+            border: 1px solid rgba(255,215,150,0.06);
+            box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+            backdrop-filter: blur(20px);
+        }
+        .modal-oublie .modal-content h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .modal-oublie .modal-content p {
+            color: rgba(255,255,255,0.4);
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+        }
+        .modal-oublie .modal-content .btn-fermer {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 14px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s;
+            margin-top: 12px;
+            font-size: 0.9rem;
+        }
+        .modal-oublie .modal-content .btn-fermer:hover {
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @media (max-width: 480px) {
+            .conteneur-connexion { 
+                padding: 28px 20px 24px; 
+                margin: 10px;
+                border-radius: 24px;
+                max-width: 100%;
+            }
+            .logo-container h1 { font-size: 1.5rem; }
+            .logo-symbol { width: 72px; height: 72px; font-size: 2rem; }
+            .logo-container { margin-bottom: 20px; }
+            .food-deco { margin-bottom: 18px; }
+            .food-deco span { width: 6px; height: 6px; }
+            .food-deco span:nth-child(2) { width: 10px; height: 10px; }
+            .food-deco span:nth-child(4) { width: 10px; height: 10px; }
+            .food-deco span:nth-child(7) { width: 10px; height: 10px; }
+            .roles-container { gap: 10px; margin-bottom: 18px; }
+            .role-card { padding: 12px 10px; }
+            .role-card .role-icon { font-size: 1.4rem; }
+            .role-card .role-nom { font-size: 0.8rem; }
+            .role-card .role-desc { font-size: 0.6rem; }
+            .form-groupe { margin-bottom: 12px; }
+            .form-groupe input { padding: 12px 14px; font-size: 0.9rem; }
+            .btn-connexion { padding: 14px; font-size: 0.9rem; }
+            .btn-inscription { padding: 12px; font-size: 0.85rem; margin-top: 10px; }
+            .separateur { margin: 12px 0; }
+            .form-options { margin: 2px 0 14px; }
+            .message-erreur, .message-succes { padding: 10px 14px; margin-bottom: 12px; font-size: 0.8rem; }
+            .message-info { font-size: 0.6rem; margin-top: 12px; padding-top: 12px; }
+            .message-info .mot-passe-demo { font-size: 0.75rem; padding: 2px 12px; }
+            .modal-oublie .modal-content { padding: 28px 20px; }
+            .floating-ingredients .ingredient { font-size: 1.2rem !important; }
+            .food-bg .bg-image { width: 150px !important; height: 150px !important; }
+        }
+
+        @media (max-height: 750px) {
+            .conteneur-connexion { 
+                padding: 22px 28px 20px;
+                max-width: 480px;
+            }
+            .logo-symbol { width: 64px; height: 64px; font-size: 1.8rem; }
+            .logo-container { margin-bottom: 14px; }
+            .logo-container h1 { font-size: 1.5rem; }
+            .food-deco { margin-bottom: 14px; }
+            .food-deco span { width: 6px; height: 6px; }
+            .food-deco span:nth-child(2) { width: 10px; height: 10px; }
+            .food-deco span:nth-child(4) { width: 10px; height: 10px; }
+            .food-deco span:nth-child(7) { width: 10px; height: 10px; }
+            .roles-container { gap: 10px; margin-bottom: 14px; }
+            .role-card { padding: 10px 12px; }
+            .role-card .role-icon { font-size: 1.4rem; }
+            .role-card .role-nom { font-size: 0.8rem; }
+            .role-card .role-desc { font-size: 0.6rem; }
+            .form-groupe { margin-bottom: 10px; }
+            .form-groupe input { padding: 10px 14px; font-size: 0.85rem; }
+            .btn-connexion { padding: 12px; font-size: 0.85rem; }
+            .btn-inscription { padding: 10px; font-size: 0.8rem; margin-top: 8px; }
+            .separateur { margin: 10px 0; }
+            .form-options { margin: 0 0 12px; }
+            .message-erreur, .message-succes { padding: 8px 12px; margin-bottom: 10px; font-size: 0.75rem; }
+            .message-info { font-size: 0.55rem; margin-top: 10px; padding-top: 10px; }
+            .message-info .mot-passe-demo { font-size: 0.7rem; padding: 2px 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================
+    FOND AVEC LES 3 IMAGES
+    ============================================================ -->
+    <div class="food-bg">
+        <div class="bg-image"></div>
+        <div class="bg-image"></div>
+        <div class="bg-image"></div>
+    </div>
+
+    <div class="grid-pattern"></div>
+
+    <!-- ============================================================
+    INGRÉDIENTS FLOTTANTS
+    ============================================================ -->
+    <div class="floating-ingredients">
+        <span class="ingredient">🍅</span>
+        <span class="ingredient">🌿</span>
+        <span class="ingredient">🧅</span>
+        <span class="ingredient">🌶️</span>
+        <span class="ingredient">🧄</span>
+        <span class="ingredient">🍋</span>
+    </div>
+
+    <!-- ============================================================
+    BOX DE CONNEXION
+    ============================================================ -->
+    <div class="conteneur-connexion">
+        <div class="food-deco">
+            <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+
+        <div class="logo-container">
+            <div class="logo-wrapper">
+                <div class="logo-symbol">🍽️</div>
+            </div>
+            <h1>Répertoire des <span>Saveurs</span></h1>
+            <div class="sous-titre">✦ L'Art de la Table ✦</div>
+        </div>
+
+        <div id="message-erreur" class="message-erreur">
+            <span>⚠️</span>
+            <span id="texte-erreur">Erreur de connexion</span>
+        </div>
+        <div id="message-succes" class="message-succes">
+            <span>✅</span>
+            <span id="texte-succes">Succès</span>
+        </div>
+
+        <!-- ============================================================
+        SÉLECTION DU RÔLE
+        ============================================================ -->
+        <div class="roles-container">
+            <div class="role-card selectionne" data-role="user" onclick="selectionnerRole('user')">
+                <span class="role-icon">👤</span>
+                <div class="role-nom">Gourmet</div>
+                <div class="role-desc">Découvrir les saveurs</div>
+            </div>
+            <div class="role-card" data-role="admin" onclick="selectionnerRole('admin')">
+                <span class="role-icon">👨‍🍳</span>
+                <div class="role-nom">Chef</div>
+                <div class="role-desc">Gérer l'expérience</div>
+            </div>
+        </div>
+
+        <form id="form-connexion">
+            <div class="form-groupe" id="groupe-email">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="votre@email.com">
+            </div>
+            
+            <div class="form-groupe" id="groupe-mot-passe">
+                <label for="mot-passe" id="label-mot-passe">Mot de passe</label>
+                <input type="password" id="mot-passe" placeholder="••••••••">
+            </div>
+
+            <div class="form-options" id="options-oublie">
+                <a href="#" onclick="ouvrirModalOublie(); return false;">Mot de passe oublié ?</a>
+            </div>
+
+            <button type="submit" class="btn-connexion" id="btn-connexion">
+                <span>Explorer les saveurs</span>
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </form>
+
+        <div class="separateur">ou</div>
+
+        <button class="btn-inscription" onclick="window.location.href='inscription.html'">
+            <i class="fas fa-user-plus"></i> Créer un compte
+        </button>
+
+        <div class="message-info">
+            <span>🔑 Code Chef :</span>
+            <span class="mot-passe-demo">1234</span>
+        </div>
+    </div>
+
+    <!-- Modal Mot de passe oublié -->
+    <div class="modal-oublie" id="modal-oublie">
+        <div class="modal-content">
+            <h3>🔑 Mot de passe oublié</h3>
+            <p>Entrez votre email pour recevoir un lien de réinitialisation.</p>
+            <div class="form-groupe">
+                <label for="email-oublie">Email</label>
+                <input type="email" id="email-oublie" placeholder="votre@email.com">
+            </div>
+            <button class="btn-connexion" onclick="demanderReinitialisation()" style="margin-top:4px;">
+                <span>Envoyer</span>
+                <i class="fas fa-paper-plane"></i>
+            </button>
+            <button class="btn-fermer" onclick="fermerModalOublie()">✕ Fermer</button>
+        </div>
+    </div>
+
+    <script>
+        let roleSelectionne = 'user';
+
+        function selectionnerRole(role) {
+            roleSelectionne = role;
+            document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selectionne'));
+            document.querySelector(`.role-card[data-role="${role}"]`).classList.add('selectionne');
+            
+            const groupeEmail = document.getElementById('groupe-email');
+            const groupeMdp = document.getElementById('groupe-mot-passe');
+            const labelMdp = document.getElementById('label-mot-passe');
+            const btn = document.getElementById('btn-connexion');
+            const optionsOublie = document.getElementById('options-oublie');
+            const inputMdp = document.getElementById('mot-passe');
+            const inputEmail = document.getElementById('email');
+            
+            if (role === 'admin') {
+                groupeEmail.classList.add('cache');
+                labelMdp.textContent = 'Code Chef';
+                inputMdp.placeholder = 'Entrez le code secret';
+                optionsOublie.style.display = 'none';
+                btn.className = 'btn-connexion';
+                btn.querySelector('span').textContent = 'Accéder en tant que Chef';
+                inputEmail.value = '';
+                inputEmail.removeAttribute('required');
+                inputMdp.value = '';
+            } else {
+                groupeEmail.classList.remove('cache');
+                labelMdp.textContent = 'Mot de passe';
+                inputMdp.placeholder = '••••••••';
+                optionsOublie.style.display = 'flex';
+                btn.className = 'btn-connexion btn-utilisateur';
+                btn.querySelector('span').textContent = 'Explorer les saveurs';
+                inputEmail.setAttribute('required', 'required');
+            }
+            document.getElementById('message-erreur').classList.remove('show');
+        }
+
+        document.getElementById('form-connexion').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const btn = document.getElementById('btn-connexion');
+            const msgErreur = document.getElementById('message-erreur');
+            const texteErreur = document.getElementById('texte-erreur');
+
+            msgErreur.classList.remove('show');
+            document.getElementById('message-succes').classList.remove('show');
+
+            if (roleSelectionne === 'admin') {
+                const code = document.getElementById('mot-passe').value.trim();
+                if (code === '1234') {
+                    window.location.href = 'index.html?role=admin';
+                } else {
+                    texteErreur.textContent = code === '' ? 'Veuillez entrer le code Chef.' : 'Code Chef incorrect.';
+                    msgErreur.classList.add('show');
+                    document.getElementById('mot-passe').value = '';
+                    setTimeout(() => msgErreur.classList.remove('show'), 3000);
+                }
+                return;
+            }
+
+            const email = document.getElementById('email').value.trim();
+            const motPasse = document.getElementById('mot-passe').value.trim();
+
+            if (!email || !motPasse) {
+                texteErreur.textContent = 'Veuillez remplir tous les champs.';
+                msgErreur.classList.add('show');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span>Connexion...</span> <i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const rep = await fetch('api.php?action=connexion', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, mot_passe: motPasse })
+                });
+
+                const data = await rep.json();
+
+                if (data.succes) {
+                    sessionStorage.setItem('utilisateur_id', data.utilisateur.id);
+                    sessionStorage.setItem('utilisateur_email', data.utilisateur.email);
+                    sessionStorage.setItem('utilisateur_nom', data.utilisateur.nom || 'Utilisateur');
+                    window.location.href = 'index.html';
+                } else {
+                    texteErreur.textContent = data.erreur || 'Email ou mot de passe incorrect.';
+                    msgErreur.classList.add('show');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>Explorer les saveurs</span> <i class="fas fa-arrow-right"></i>';
+                }
+            } catch (err) {
+                texteErreur.textContent = 'Erreur de connexion au serveur.';
+                msgErreur.classList.add('show');
+                btn.disabled = false;
+                btn.innerHTML = '<span>Explorer les saveurs</span> <i class="fas fa-arrow-right"></i>';
+            }
+        });
+
+        function ouvrirModalOublie() {
+            document.getElementById('modal-oublie').classList.add('actif');
+            document.getElementById('email-oublie').focus();
+        }
+
+        function fermerModalOublie() {
+            document.getElementById('modal-oublie').classList.remove('actif');
+        }
+
+        async function demanderReinitialisation() {
+            const email = document.getElementById('email-oublie').value.trim();
+            const msgSucces = document.getElementById('message-succes');
+            const texteSucces = document.getElementById('texte-succes');
+            const msgErreur = document.getElementById('message-erreur');
+            const texteErreur = document.getElementById('texte-erreur');
+
+            msgSucces.classList.remove('show');
+            msgErreur.classList.remove('show');
+
+            if (!email) {
+                texteErreur.textContent = 'Veuillez entrer votre email.';
+                msgErreur.classList.add('show');
+                return;
+            }
+
+            try {
+                const rep = await fetch('api.php?action=reinitialisation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await rep.json();
+
+                if (data.succes) {
+                    texteSucces.textContent = 'Un lien de réinitialisation a été envoyé à votre email.';
+                    msgSucces.classList.add('show');
+                    setTimeout(() => fermerModalOublie(), 2000);
+                } else {
+                    texteErreur.textContent = data.erreur || 'Email introuvable.';
+                    msgErreur.classList.add('show');
+                }
+            } catch (err) {
+                texteErreur.textContent = 'Erreur serveur.';
+                msgErreur.classList.add('show');
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') fermerModalOublie();
+        });
+
+        document.getElementById('modal-oublie').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-oublie') fermerModalOublie();
+        });
+
+        selectionnerRole('user');
+
+        if (sessionStorage.getItem('utilisateur_id')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

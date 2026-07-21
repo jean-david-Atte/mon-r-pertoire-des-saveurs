@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Répertoire des Saveurs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: #0a0a0a;
+    color: #fff;
+    min-height: 100vh;
+    position: relative;
+}
+
+/* Grille de fond */
+.grid-pattern {
+    position: fixed;
+    inset: 0;
+    background-image: 
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Motif de fond */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+        radial-gradient(ellipse at 20% 50%, rgba(180, 60, 30, 0.08) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 50%, rgba(200, 150, 80, 0.05) 0%, transparent 60%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+header {
+    position: relative;
+    z-index: 1;
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    background: rgba(10, 10, 10, 0.8);
+    backdrop-filter: blur(20px);
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.logo-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #c0392b, #e67e22);
+    color: #fff;
+}
+.logo-area h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+}
+.logo-area h1 span { color: #d4a050; }
+
+.badge-role {
+    font-size: 0.6rem;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.badge-role.admin { background: #c0392b; color: #fff; }
+.badge-role.user { background: #2d5a3d; color: #fff; }
+
+.search-area {
+    flex: 1;
+    max-width: 480px;
+    min-width: 200px;
+    position: relative;
+}
+#champ-recherche {
+    width: 100%;
+    padding: 10px 48px 10px 18px;
+    border-radius: 50px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.04);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: #fff;
+    transition: all 0.3s ease;
+}
+#champ-recherche:focus {
+    border-color: rgba(212, 160, 80, 0.3);
+    outline: none;
+    background: rgba(255,255,255,0.07);
+}
+#champ-recherche::placeholder { color: rgba(255,255,255,0.25); }
+.search-icon {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255,255,255,0.2);
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* ============================================================
+   BOUTONS
+   ============================================================ */
+.btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 50px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.3px;
+}
+.btn-primary { background: #d4a050; color: #0a0a0a; }
+.btn-primary:hover { background: #e8b85a; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(212, 160, 80, 0.2); }
+.btn-secondary { background: rgba(255,255,255,0.06); color: #fff; }
+.btn-secondary:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+.btn-danger { background: #c0392b; color: #fff; }
+.btn-danger:hover { background: #e74c3c; transform: translateY(-2px); }
+.btn-deconnexion { background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.6); }
+.btn-deconnexion:hover { background: rgba(255,255,255,0.08); color: #fff; transform: translateY(-2px); }
+.btn-favori-header {
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.6);
+}
+.btn-favori-header:hover {
+    background: rgba(192, 57, 43, 0.2);
+    color: #e74c3c;
+    transform: translateY(-2px);
+}
+
+/* ============================================================
+   MAIN
+   ============================================================ */
+main {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 20px 40px;
+}
+
+/* ============================================================
+   BARRE DE TRI - Style amélioré
+   ============================================================ */
+.barre-trie {
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 28px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+.barre-trie label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+.barre-trie select {
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.04);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+.barre-trie select:focus {
+    border-color: rgba(212, 160, 80, 0.3);
+    outline: none;
+}
+.barre-trie select option { background: #1a1a1a; color: #fff; }
+
+.btn-trie {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #d4a050;
+    color: #0a0a0a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.btn-trie:hover { background: #e8b85a; transform: translateY(-2px); }
+
+.btn-trie-supprimer {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(192, 57, 43, 0.15);
+    color: #e74c3c;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.btn-trie-supprimer:hover { background: rgba(192, 57, 43, 0.3); transform: translateY(-2px); }
+
+.groupe-trie, .groupe-filtres {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ============================================================
+   CARTE - Style premium
+   ============================================================ */
+.section-carte {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 32px;
+    backdrop-filter: blur(8px);
+}
+.section-carte .en-tete-carte {
+    padding: 16px 24px;
+    background: rgba(255,255,255,0.02);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.section-carte .en-tete-carte h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #fff;
+}
+.section-carte .en-tete-carte .stats {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.4);
+}
+
+#carte-restaurants {
+    height: 440px;
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+}
+
+/* Marqueurs Leaflet personnalisés */
+.marqueur-custom {
+    background: linear-gradient(135deg, #c0392b, #e67e22);
+    color: white;
+    border-radius: 50% 50% 50% 0;
+    width: 40px;
+    height: 40px;
+    transform: rotate(-45deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(192, 57, 43, 0.4);
+    border: 2px solid rgba(255,255,255,0.2);
+}
+.marqueur-custom i { transform: rotate(45deg); font-size: 1rem; }
+
+.leaflet-popup-content-wrapper {
+    background: #1a1a1a !important;
+    border-radius: 16px !important;
+    color: #fff !important;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+.leaflet-popup-tip { background: #1a1a1a !important; }
+.leaflet-popup-content {
+    font-family: 'Inter', sans-serif;
+    min-width: 200px;
+    color: #fff;
+}
+.leaflet-popup-content .nom-restaurant {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #d4a050;
+    margin-bottom: 2px;
+}
+.leaflet-popup-content .quartier-restaurant {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.5);
+}
+.leaflet-popup-content .plats-restaurant {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+.leaflet-popup-content .plat-item {
+    font-size: 0.8rem;
+    padding: 3px 0;
+    display: flex;
+    justify-content: space-between;
+    color: rgba(255,255,255,0.8);
+}
+.leaflet-popup-content .plat-prix {
+    color: #d4a050;
+    font-weight: 600;
+}
+.leaflet-popup-content .voir-plus {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 16px;
+    background: #d4a050;
+    color: #0a0a0a;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 0.7rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+.leaflet-popup-content .voir-plus:hover { background: #e8b85a; transform: scale(1.05); }
+
+/* ============================================================
+   GRILLE PLATS
+   ============================================================ */
+.grille-plats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.carte-plat {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.4s ease;
+    cursor: pointer;
+}
+.carte-plat:hover {
+    transform: translateY(-6px);
+    border-color: rgba(212, 160, 80, 0.2);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+.carte-image {
+    position: relative;
+}
+.carte-image img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    display: block;
+}
+
+.btn-favori {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px);
+    color: rgba(255,255,255,0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    z-index: 2;
+}
+.btn-favori:hover {
+    background: rgba(192, 57, 43, 0.3);
+    transform: scale(1.1);
+}
+.btn-favori.actif {
+    color: #e74c3c;
+    background: rgba(192, 57, 43, 0.2);
+}
+.btn-favori.actif:hover {
+    background: rgba(192, 57, 43, 0.4);
+}
+
+.carte-plat .contenu-carte {
+    padding: 14px 16px 16px;
+}
+.carte-plat h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 2px;
+}
+.badge-categorie {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 10px;
+    border-radius: 20px;
+    background: rgba(212, 160, 80, 0.15);
+    color: #d4a050;
+    margin-bottom: 6px;
+}
+.origine-plat {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 6px;
+}
+.notation { color: #d4a050; font-size: 0.85rem; }
+.notation .gris { color: rgba(255,255,255,0.1); }
+.carte-actions {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+.btn-supprimer {
+    background: rgba(192, 57, 43, 0.2);
+    color: #e74c3c;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Inter', sans-serif;
+}
+.btn-supprimer:hover { background: rgba(192, 57, 43, 0.3); }
+
+/* ============================================================
+   SECTION TITRES
+   ============================================================ */
+section h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 16px;
+}
+section h2::before {
+    content: '✦ ';
+    color: #d4a050;
+}
+
+.message-etat {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255,255,255,0.3);
+    font-style: italic;
+}
+
+/* ============================================================
+   MODALES
+   ============================================================ */
+.fond-modale, .fond-modale-ajout {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(16px);
+    z-index: 100;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 30px 16px;
+    overflow-y: auto;
+}
+.fond-modale.actif, .fond-modale-ajout.actif { display: flex; }
+
+.fiche-plat {
+    background: #141414;
+    max-width: 720px;
+    width: 100%;
+    border-radius: 24px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.04);
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    position: relative;
+    animation: apparition .3s ease;
+}
+@keyframes apparition {
+    from { opacity: 0; transform: scale(0.95) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.bouton-fermer {
+    position: absolute;
+    top: 14px; right: 14px;
+    background: rgba(255,255,255,0.04);
+    border: none;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: rgba(255,255,255,0.4);
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+.bouton-fermer:hover { background: rgba(255,255,255,0.08); color: #fff; transform: rotate(90deg); }
+
+.entete-fiche { display: flex; flex-wrap: wrap; }
+.entete-fiche img {
+    width: 100%;
+    max-width: 280px;
+    height: 220px;
+    object-fit: cover;
+}
+.infos-fiche { padding: 20px 24px; flex: 1; min-width: 200px; }
+.infos-fiche h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: #fff;
+    margin-bottom: 4px;
+}
+.infos-fiche .origine-plat { color: rgba(255,255,255,0.4); font-size: 0.85rem; margin-bottom: 8px; }
+.infos-fiche p.description { color: rgba(255,255,255,0.6); font-size: 0.9rem; margin: 10px 0; line-height: 1.6; }
+
+.zone-offres { padding: 4px 24px 24px; }
+.zone-offres h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: #d4a050;
+    margin-bottom: 12px;
+}
+.tuiles-offres { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.tuile-offre {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 12px;
+    padding: 12px 14px;
+    position: relative;
+}
+.tuile-offre.meilleur-prix { border-color: #d4a050; }
+.tuile-offre .etiquette-meilleur {
+    position: absolute; top: -8px; right: 8px;
+    background: #d4a050; color: #0a0a0a;
+    font-size: 0.55rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 20px;
+    text-transform: uppercase;
+}
+.tuile-offre .nom-offrant { font-weight: 600; color: #fff; font-size: 0.85rem; }
+.tuile-offre .quartier-offrant { font-size: 0.7rem; color: rgba(255,255,255,0.3); margin: 2px 0 6px; }
+.tuile-offre .prix-offrant { font-size: 1rem; font-weight: 700; color: #d4a050; }
+.tuile-offre a {
+    display: inline-block; margin-top: 4px;
+    font-size: 0.7rem; color: rgba(255,255,255,0.4);
+    text-decoration: none;
+}
+.tuile-offre a:hover { color: #d4a050; }
+
+/* Formulaire ajout */
+.formulaire-ajout {
+    background: #141414;
+    max-width: 520px;
+    width: 100%;
+    border-radius: 24px;
+    padding: 28px 24px;
+    border: 1px solid rgba(255,255,255,0.04);
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    position: relative;
+}
+.formulaire-ajout h2 {
+    font-family: 'Playfair Display', serif;
+    color: #fff;
+    margin-bottom: 16px;
+}
+.formulaire-ajout label {
+    display: block;
+    margin-top: 12px;
+    font-weight: 500;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.5);
+}
+.formulaire-ajout input, .formulaire-ajout textarea, .formulaire-ajout select {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.03);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: #fff;
+    transition: all 0.3s ease;
+}
+.formulaire-ajout input:focus, .formulaire-ajout textarea:focus, .formulaire-ajout select:focus {
+    border-color: rgba(212, 160, 80, 0.3);
+    outline: none;
+    background: rgba(255,255,255,0.05);
+}
+.formulaire-ajout textarea { resize: vertical; min-height: 70px; }
+.formulaire-ajout .champs-groupe { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.formulaire-ajout .btn { width: 100%; justify-content: center; margin-top: 16px; }
+
+/* Toast */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 14px 24px;
+    border-radius: 16px;
+    font-weight: 600;
+    z-index: 300;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s ease;
+    max-width: 400px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+.toast.success { background: #2d5a3d; color: #fff; }
+.toast.error { background: #c0392b; color: #fff; }
+.toast.info { background: #d4a050; color: #0a0a0a; }
+.toast.show { opacity: 1; transform: translateY(0); }
+
+footer {
+    text-align: center;
+    padding: 16px;
+    color: rgba(255,255,255,0.15);
+    font-size: 0.75rem;
+    border-top: 1px solid rgba(255,255,255,0.02);
+    margin-top: 16px;
+    position: relative;
+    z-index: 1;
+}
+
+@media (max-width: 640px) {
+    .header-content { flex-direction: column; align-items: stretch; }
+    .logo-area { justify-content: center; }
+    .search-area { max-width: 100%; }
+    .header-actions { justify-content: center; }
+    .barre-trie { flex-direction: column; align-items: stretch; }
+    .barre-trie select { min-width: 100%; }
+    .grille-plats { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    .entete-fiche img { max-width: 100%; height: 160px; }
+    .formulaire-ajout .champs-groupe { grid-template-columns: 1fr; }
+    #carte-restaurants { height: 280px; }
+}
+</style>
+</head>
+<body>
+
+<div class="grid-pattern"></div>
+
+<header>
+    <div class="header-content">
+        <div class="logo-area">
+            <div class="logo-icon">🌍</div>
+            <h1>Répertoire des <span>Saveurs</span></h1>
+            <span id="badge-role" class="badge-role user">
+                <i class="fas fa-user"></i> <span id="nom-utilisateur">Utilisateur</span>
+            </span>
+        </div>
+        <div class="search-area">
+            <input type="text" id="champ-recherche" placeholder="Rechercher un plat..." autocomplete="off">
+            <span class="search-icon">🔍</span>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" id="btn-ajouter" style="display:none;" onclick="ouvrirFormulaireAjout()">➕ Ajouter</button>
+            <button class="btn btn-secondary" onclick="afficherFavoris()">
+                <i class="fas fa-heart"></i> Favoris
+            </button>
+            <button class="btn btn-secondary" onclick="rafraichirCatalogue()">🔄 Rafraîchir</button>
+            <button class="btn btn-deconnexion" onclick="deconnecter()">🚪 Déconnexion</button>
+        </div>
+    </div>
+</header>
+
+<main>
+    <!-- Barre de tri améliorée -->
+    <div class="barre-trie">
+        <div class="groupe-trie">
+            <label for="trie-critere">Trier par</label>
+            <select id="trie-critere">
+                <option value="nom">Nom</option>
+                <option value="note">Note</option>
+                <option value="origine">Origine</option>
+                <option value="categorie">Catégorie</option>
+            </select>
+            <select id="trie-ordre">
+                <option value="ASC">⬆ Croissant</option>
+                <option value="DESC">⬇ Décroissant</option>
+            </select>
+            <button class="btn-trie" onclick="appliquerTri()">
+                <i class="fas fa-arrow-right"></i> Appliquer
+            </button>
+        </div>
+        <div class="groupe-filtres">
+            <label for="filtre-type">Filtrer par</label>
+            <select id="filtre-type">
+                <option value="categorie">Catégorie</option>
+                <option value="origine">Origine</option>
+            </select>
+            <select id="filtre-valeur"><option value="">Tous</option></select>
+            <button class="btn-trie" onclick="appliquerFiltre()">
+                <i class="fas fa-filter"></i> Filtrer
+            </button>
+            <button class="btn-trie-supprimer" onclick="supprimerFiltres()">
+                <i class="fas fa-times"></i> Réinitialiser
+            </button>
+        </div>
+    </div>
+
+    <!-- Carte -->
+    <section class="section-carte">
+        <div class="en-tete-carte">
+            <h2>🗺️ Carte des Restaurants</h2>
+            <span class="stats" id="stats-restaurants">Chargement...</span>
+        </div>
+        <div id="carte-restaurants"></div>
+    </section>
+
+    <!-- Résultats -->
+    <section id="section-resultats" style="display:none;">
+        <h2>Résultats de recherche</h2>
+        <div class="grille-plats" id="grille-resultats"></div>
+    </section>
+
+    <!-- Catalogue -->
+    <section id="section-catalogue">
+        <h2>Découvrir au hasard</h2>
+        <div class="grille-plats" id="grille-catalogue"></div>
+    </section>
+</main>
+
+<footer>Répertoire des Saveurs </footer>
+
+<!-- Modales -->
+<div class="fond-modale" id="fond-modale">
+    <div class="fiche-plat" id="fiche-plat"></div>
+</div>
+
+<div class="fond-modale-ajout" id="fond-modale-ajout">
+    <div class="formulaire-ajout">
+        <button class="bouton-fermer" onclick="fermerFormulaireAjout()">✕</button>
+        <h2>➕ Ajouter un plat</h2>
+        <form id="form-ajout-plat">
+            <label>Nom *</label>
+            <input type="text" id="ajout-nom" required placeholder="Ex: Attiéké Poisson">
+            <label>Description *</label>
+            <textarea id="ajout-description" required placeholder="Décrivez le plat..."></textarea>
+            <div class="champs-groupe">
+                <div>
+                    <label>Origine *</label>
+                    <input type="text" id="ajout-origine" required placeholder="Ex: Côte d'Ivoire">
+                </div>
+                <div>
+                    <label>Catégorie *</label>
+                    <select id="ajout-categorie" required>
+                        <option value="Plat principal">Plat principal</option>
+                        <option value="Entrée">Entrée</option>
+                        <option value="Dessert">Dessert</option>
+                        <option value="Pâtisserie">Pâtisserie</option>
+                        <option value="Boisson">Boisson</option>
+                    </select>
+                </div>
+            </div>
+            <div class="champs-groupe">
+                <div>
+                    <label>Note (0-5) *</label>
+                    <input type="number" id="ajout-note" required min="0" max="5" step="0.1" value="4.0">
+                </div>
+                <div>
+                    <label>Image URL *</label>
+                    <input type="url" id="ajout-image" required placeholder="https://...">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">✅ Ajouter</button>
+        </form>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_URL = 'api.php';
+let isAdmin = false;
+let carte = null;
+let marqueurs = [];
+let platsFavoris = [];
+
+/* ============================================================
+   RÔLE
+   ============================================================ */
+function verifierRole() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const role = urlParams.get('role');
+    if (role === 'admin') {
+        isAdmin = true;
+        document.getElementById('badge-role').className = 'badge-role admin';
+        document.getElementById('badge-role').innerHTML = '👑 Admin';
+        document.getElementById('btn-ajouter').style.display = 'inline-flex';
+        showToast('👋 Bienvenue Administrateur !', 'success');
+        return true;
+    } else {
+        isAdmin = false;
+        document.getElementById('badge-role').className = 'badge-role user';
+        const nom = sessionStorage.getItem('utilisateur_nom') || 'Utilisateur';
+        document.getElementById('badge-role').innerHTML = `<i class="fas fa-user"></i> ${nom}`;
+        document.getElementById('btn-ajouter').style.display = 'none';
+        return false;
+    }
+}
+
+function deconnecter() {
+    if (confirm('Voulez-vous vous déconnecter ?')) {
+        sessionStorage.clear();
+        window.location.href = 'login.html';
+    }
+}
+
+/* ============================================================
+   AFFICHAGE
+   ============================================================ */
+function afficherEtoiles(note) {
+    const pleine = Math.round(note);
+    let html = '';
+    for (let i = 1; i <= 5; i++) html += i <= pleine ? '★' : '<span class="gris">★</span>';
+    return `<span class="notation">${html} <small>(${note.toFixed(1)})</small></span>`;
+}
+
+function construireCarte(plat) {
+    const utilisateurId = sessionStorage.getItem('utilisateur_id');
+    const estFavori = platsFavoris.some(p => p.id === plat.id);
+    
+    const coeurHtml = utilisateurId ? `
+        <button class="btn-favori ${estFavori ? 'actif' : ''}" onclick="event.stopPropagation(); toggleFavori(${plat.id})">
+            <i class="fas fa-heart"></i>
+        </button>
+    ` : '';
+
+    const suppr = isAdmin ? `
+        <div class="carte-actions">
+            <button class="btn-supprimer" onclick="event.stopPropagation(); supprimerPlat(${plat.id})">🗑️ Supprimer</button>
+        </div>
+    ` : '';
+    
+    return `
+        <div class="carte-plat" data-id="${plat.id}">
+            <div class="carte-image">
+                <img src="${plat.image_url}" alt="${plat.nom}" loading="lazy" onerror="this.src='https://placehold.co/500x350/2d2d2d/FFFFFF?text=Plat'">
+                ${coeurHtml}
+            </div>
+            <div class="contenu-carte">
+                <span class="badge-categorie">${plat.categorie}</span>
+                <h3>${plat.nom}</h3>
+                <div class="origine-plat">🌍 ${plat.origine}</div>
+                ${afficherEtoiles(plat.note)}
+                ${suppr}
+            </div>
+        </div>
+    `;
+}
+
+function afficherGrille(conteneur, plats) {
+    if (!plats || plats.length === 0) {
+        conteneur.innerHTML = '<p class="message-etat">Aucun plat trouvé.</p>';
+        return;
+    }
+    conteneur.innerHTML = plats.map(p => construireCarte(p)).join('');
+    conteneur.querySelectorAll('.carte-plat').forEach(c => {
+        c.addEventListener('click', (e) => {
+            if (!e.target.closest('.btn-supprimer') && !e.target.closest('.btn-favori')) {
+                ouvrirFiche(c.dataset.id);
+            }
+        });
+    });
+}
+
+function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${type}`;
+    setTimeout(() => t.classList.add('show'), 10);
+    setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ============================================================
+   FAVORIS
+   ============================================================ */
+async function chargerFavoris() {
+    const utilisateurId = sessionStorage.getItem('utilisateur_id');
+    if (!utilisateurId) return;
+
+    try {
+        const rep = await fetch(`${API_URL}?action=favoris_plats&utilisateur_id=${utilisateurId}`);
+        const data = await rep.json();
+        platsFavoris = data.favoris || [];
+    } catch (err) {
+        console.error('Erreur chargement favoris:', err);
+    }
+}
+
+async function toggleFavori(platId) {
+    const utilisateurId = sessionStorage.getItem('utilisateur_id');
+    if (!utilisateurId) {
+        showToast('Connectez-vous pour ajouter des favoris', 'error');
+        return;
+    }
+
+    const estFavori = platsFavoris.some(p => p.id === platId);
+    const action = estFavori ? 'supprimer_favori_plat' : 'ajouter_favori_plat';
+    const method = estFavori ? 'DELETE' : 'POST';
+    const url = estFavori ? 
+        `${API_URL}?action=${action}&utilisateur_id=${utilisateurId}&plat_id=${platId}` :
+        `${API_URL}?action=ajouter_favori_plat`;
+    
+    try {
+        const options = {
+            method: method,
+            headers: { 'Content-Type': 'application/json' }
+        };
+        if (!estFavori) {
+            options.body = JSON.stringify({ utilisateur_id: utilisateurId, plat_id: platId });
+        }
+        
+        const rep = await fetch(url, options);
+        const data = await rep.json();
+        
+        if (data.succes) {
+            await chargerFavoris();
+            rafraichirCatalogue();
+            showToast(estFavori ? 'Retiré des favoris' : 'Ajouté aux favoris', 'success');
+        } else {
+            showToast(data.erreur || 'Erreur', 'error');
+        }
+    } catch (err) {
+        showToast('Erreur serveur', 'error');
+    }
+}
+
+async function afficherFavoris() {
+    const utilisateurId = sessionStorage.getItem('utilisateur_id');
+    if (!utilisateurId) {
+        showToast('Connectez-vous pour voir vos favoris', 'error');
+        return;
+    }
+    
+    await chargerFavoris();
+    if (platsFavoris.length === 0) {
+        showToast('Aucun plat favori', 'info');
+        return;
+    }
+    
+    document.getElementById('section-catalogue').style.display = 'block';
+    document.getElementById('section-resultats').style.display = 'none';
+    const c = document.getElementById('grille-catalogue');
+    afficherGrille(c, platsFavoris);
+    showToast(`${platsFavoris.length} plat(s) favori(s)`, 'info');
+}
+
+/* ============================================================
+   CARTE
+   ============================================================ */
+async function chargerRestaurants() {
+    try {
+        const rep = await fetch(`${API_URL}?action=restaurants`);
+        const data = await rep.json();
+        const restaurants = data.restaurants || [];
+        document.getElementById('stats-restaurants').textContent = `📍 ${restaurants.length} restaurants`;
+        initialiserCarte(restaurants);
+    } catch {
+        document.getElementById('stats-restaurants').textContent = '❌ Erreur';
+    }
+}
+
+function initialiserCarte(restaurants) {
+    const abidjan = [5.3364, -4.0215];
+    if (!carte) {
+        carte = L.map('carte-restaurants', { center: abidjan, zoom: 13, zoomControl: false });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap, © CartoDB',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(carte);
+        L.control.zoom({ position: 'bottomright' }).addTo(carte);
+    }
+    marqueurs.forEach(m => carte.removeLayer(m));
+    marqueurs = [];
+
+    restaurants.forEach(r => {
+        if (r.latitude && r.longitude) {
+            const icone = L.divIcon({
+                className: 'marqueur-custom',
+                html: '<i class="fas fa-utensils"></i>',
+                iconSize: [40, 40],
+                iconAnchor: [20, 40],
+                popupAnchor: [0, -40]
+            });
+            const m = L.marker([r.latitude, r.longitude], { icon: icone }).addTo(carte);
+            m.bindPopup(`
+                <div>
+                    <div class="nom-restaurant">🏪 ${r.nom}</div>
+                    <div class="quartier-restaurant">📍 ${r.quartier}</div>
+                    <div class="plats-restaurant">
+                        <strong>📋 ${r.nb_plats} plat${r.nb_plats > 1 ? 's' : ''}</strong>
+                        <div id="plats-${r.id}"><em style="color:rgba(255,255,255,0.3);font-size:0.8rem;">Chargement...</em></div>
+                    </div>
+                    <a href="${r.lien || '#'}" target="_blank" class="voir-plus">Voir sur la carte →</a>
+                </div>
+            `, { maxWidth: 280 });
+            m.on('popupopen', async () => {
+                const c = document.getElementById(`plats-${r.id}`);
+                if (c && c.innerHTML.includes('Chargement')) {
+                    try {
+                        const rep = await fetch(`${API_URL}?action=restaurant_plats&id=${r.id}`);
+                        const data = await rep.json();
+                        const plats = data.plats || [];
+                        c.innerHTML = plats.length ? plats.slice(0, 4).map(p => `
+                            <div class="plat-item"><span>${p.nom}</span><span class="plat-prix">${p.prix.toLocaleString()} FCFA</span></div>
+                        `).join('') + (plats.length > 4 ? `<div style="text-align:center;font-size:0.65rem;color:rgba(255,255,255,0.2);">+${plats.length-4} autres</div>` : '') : '<span style="color:rgba(255,255,255,0.2);font-size:0.8rem;">Aucun plat</span>';
+                    } catch { c.innerHTML = '<span style="color:rgba(255,255,255,0.2);">Erreur</span>'; }
+                }
+            });
+            marqueurs.push(m);
+        }
+    });
+    if (marqueurs.length > 1) {
+        const g = L.featureGroup(marqueurs);
+        carte.fitBounds(g.getBounds().pad(0.15));
+    }
+}
+
+/* ============================================================
+   TRI & FILTRES
+   ============================================================ */
+async function appliquerTri() {
+    const critere = document.getElementById('trie-critere').value;
+    const ordre = document.getElementById('trie-ordre').value;
+    const c = document.getElementById('grille-catalogue');
+    c.innerHTML = '<p class="message-etat">Tri en cours...</p>';
+    try {
+        const rep = await fetch(`${API_URL}?action=trier&critere=${critere}&ordre=${ordre}&limite=30`);
+        const data = await rep.json();
+        afficherGrille(c, data.resultats || []);
+        document.getElementById('section-resultats').style.display = 'none';
+        document.getElementById('section-catalogue').style.display = 'block';
+        showToast(`Trié par ${critere} (${ordre === 'ASC' ? 'croissant' : 'décroissant'})`, 'info');
+    } catch { c.innerHTML = '<p class="message-etat">Erreur de tri.</p>'; }
+}
+
+async function appliquerFiltre() {
+    const type = document.getElementById('filtre-type').value;
+    const valeur = document.getElementById('filtre-valeur').value;
+    if (!valeur) { showToast('Sélectionnez une valeur', 'error'); return; }
+    const c = document.getElementById('grille-catalogue');
+    c.innerHTML = '<p class="message-etat">Filtrage en cours...</p>';
+    try {
+        const rep = await fetch(`${API_URL}?action=filtrer&type=${type}&valeur=${encodeURIComponent(valeur)}`);
+        const data = await rep.json();
+        afficherGrille(c, data.resultats || []);
+        document.getElementById('section-resultats').style.display = 'none';
+        document.getElementById('section-catalogue').style.display = 'block';
+        showToast(`Filtré : ${valeur} (${data.resultats.length} plats)`, 'info');
+    } catch { c.innerHTML = '<p class="message-etat">Erreur de filtrage.</p>'; }
+}
+
+function supprimerFiltres() {
+    document.getElementById('filtre-valeur').value = '';
+    showToast('Filtres réinitialisés', 'info');
+    chargerCatalogueAleatoire();
+}
+
+async function chargerOptionsFiltres() {
+    try {
+        const type = document.getElementById('filtre-type').value;
+        const url = type === 'categorie' ? 'categories' : 'origines';
+        const rep = await fetch(`${API_URL}?action=${url}`);
+        const data = await rep.json();
+        const valeurs = type === 'categorie' ? data.categories : data.origines;
+        const sel = document.getElementById('filtre-valeur');
+        sel.innerHTML = '<option value="">Tous</option>';
+        (valeurs || []).forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+    } catch {}
+}
+document.getElementById('filtre-type').addEventListener('change', chargerOptionsFiltres);
+
+/* ============================================================
+   RECHERCHE
+   ============================================================ */
+let timer = null;
+function surSaisieRecherche(e) {
+    const terme = e.target.value.trim();
+    clearTimeout(timer);
+    if (terme === '') {
+        document.getElementById('section-resultats').style.display = 'none';
+        document.getElementById('section-catalogue').style.display = 'block';
+        chargerCatalogueAleatoire();
+        return;
+    }
+    timer = setTimeout(async () => {
+        document.getElementById('section-catalogue').style.display = 'none';
+        document.getElementById('section-resultats').style.display = 'block';
+        const c = document.getElementById('grille-resultats');
+        c.innerHTML = '<p class="message-etat">Recherche...</p>';
+        try {
+            const rep = await fetch(`${API_URL}?action=recherche&q=${encodeURIComponent(terme)}`);
+            const data = await rep.json();
+            afficherGrille(c, data.resultats || []);
+        } catch { c.innerHTML = '<p class="message-etat">Erreur de recherche.</p>'; }
+    }, 350);
+}
+
+/* ============================================================
+   FICHE
+   ============================================================ */
+async function ouvrirFiche(id) {
+    const fond = document.getElementById('fond-modale');
+    const fiche = document.getElementById('fiche-plat');
+    fiche.innerHTML = '<p class="message-etat">Chargement...</p>';
+    fond.classList.add('actif');
+    try {
+        const rep = await fetch(`${API_URL}?action=detail&id=${id}`);
+        const data = await rep.json();
+        const plat = data.resultat;
+        if (!plat) { fiche.innerHTML = '<p class="message-etat">Plat introuvable.</p>'; return; }
+        const prixMin = plat.offres.length ? Math.min(...plat.offres.map(o => o.prix)) : null;
+        const tuiles = plat.offres.length ? plat.offres.map(o => `
+            <div class="tuile-offre ${o.prix === prixMin ? 'meilleur-prix' : ''}">
+                ${o.prix === prixMin ? '<span class="etiquette-meilleur">Meilleur prix</span>' : ''}
+                <div class="nom-offrant">${o.offrant_nom}</div>
+                <div class="quartier-offrant">📍 ${o.quartier}</div>
+                <div class="prix-offrant">${o.prix.toLocaleString()} FCFA</div>
+                <a href="${o.lien}" target="_blank">Voir sur la carte →</a>
+            </div>
+        `).join('') : '<p style="color:rgba(255,255,255,0.3);">Aucune offre</p>';
+        fiche.innerHTML = `
+            <button class="bouton-fermer" onclick="fermerFiche()">✕</button>
+            <div class="entete-fiche">
+                <img src="${plat.image_url}" alt="${plat.nom}" onerror="this.src='https://placehold.co/500x350/2d2d2d/FFFFFF?text=Plat'">
+                <div class="infos-fiche">
+                    <span class="badge-categorie">${plat.categorie}</span>
+                    <h2>${plat.nom}</h2>
+                    <div class="origine-plat">🌍 ${plat.origine}</div>
+                    ${afficherEtoiles(plat.note)}
+                    <p class="description">${plat.description}</p>
+                </div>
+            </div>
+            <div class="zone-offres">
+                <h3>Comparateur (${plat.offres.length} offre${plat.offres.length > 1 ? 's' : ''})</h3>
+                <div class="tuiles-offres">${tuiles}</div>
+            </div>
+        `;
+    } catch { fiche.innerHTML = '<p class="message-etat">Erreur de chargement.</p>'; }
+}
+function fermerFiche() { document.getElementById('fond-modale').classList.remove('actif'); }
+
+/* ============================================================
+   AJOUT / SUPPRESSION
+   ============================================================ */
+function ouvrirFormulaireAjout() {
+    if (!isAdmin) { showToast('⚠️ Réservé aux admins', 'error'); return; }
+    document.getElementById('fond-modale-ajout').classList.add('actif');
+}
+function fermerFormulaireAjout() {
+    document.getElementById('fond-modale-ajout').classList.remove('actif');
+    document.getElementById('form-ajout-plat').reset();
+}
+document.getElementById('form-ajout-plat').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!isAdmin) return;
+    const data = {
+        nom: document.getElementById('ajout-nom').value.trim(),
+        description: document.getElementById('ajout-description').value.trim(),
+        origine: document.getElementById('ajout-origine').value.trim(),
+        categorie: document.getElementById('ajout-categorie').value,
+        note: parseFloat(document.getElementById('ajout-note').value),
+        image_url: document.getElementById('ajout-image').value.trim()
+    };
+    try {
+        const rep = await fetch(`${API_URL}?action=ajouter`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        const res = await rep.json();
+        if (rep.ok && res.succes) { showToast('✅ Plat ajouté !'); fermerFormulaireAjout(); rafraichirCatalogue(); } 
+        else showToast(res.erreur || 'Erreur', 'error');
+    } catch { showToast('Erreur serveur', 'error'); }
+});
+
+async function supprimerPlat(id) {
+    if (!isAdmin) { showToast('⚠️ Réservé aux admins', 'error'); return; }
+    if (!confirm('Supprimer ce plat ?')) return;
+    try {
+        const rep = await fetch(`${API_URL}?action=supprimer&id=${id}`, { method: 'DELETE' });
+        const res = await rep.json();
+        if (rep.ok && res.succes) { showToast('🗑️ Plat supprimé'); rafraichirCatalogue(); } 
+        else showToast(res.erreur || 'Erreur', 'error');
+    } catch { showToast('Erreur serveur', 'error'); }
+}
+
+/* ============================================================
+   CHARGEMENT
+   ============================================================ */
+async function chargerCatalogueAleatoire() {
+    const c = document.getElementById('grille-catalogue');
+    c.innerHTML = '<p class="message-etat">Chargement...</p>';
+    try {
+        const rep = await fetch(`${API_URL}?action=aleatoire`);
+        const data = await rep.json();
+        afficherGrille(c, data.resultats || []);
+        await chargerRestaurants();
+        await chargerOptionsFiltres();
+    } catch { c.innerHTML = '<p class="message-etat">Erreur de connexion.</p>'; }
+}
+
+async function rafraichirCatalogue() {
+    await chargerCatalogueAleatoire();
+    document.getElementById('section-resultats').style.display = 'none';
+    document.getElementById('section-catalogue').style.display = 'block';
+    document.getElementById('champ-recherche').value = '';
+    showToast('Catalogue rafraîchi', 'success');
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+verifierRole();
+
+// Charger le nom de l'utilisateur
+const utilisateurId = sessionStorage.getItem('utilisateur_id');
+const nom = sessionStorage.getItem('utilisateur_nom');
+if (utilisateurId && nom && !isAdmin) {
+    document.getElementById('badge-role').innerHTML = `<i class="fas fa-user"></i> ${nom}`;
+    chargerFavoris();
+} else if (!utilisateurId && !isAdmin) {
+    // Rediriger vers login si pas connecté
+    window.location.href = 'login.html';
+}
+
+document.getElementById('champ-recherche').addEventListener('input', surSaisieRecherche);
+document.getElementById('fond-modale').addEventListener('click', e => { if (e.target.id === 'fond-modale') fermerFiche(); });
+document.getElementById('fond-modale-ajout').addEventListener('click', e => { if (e.target.id === 'fond-modale-ajout') fermerFormulaireAjout(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { fermerFiche(); fermerFormulaireAjout(); } });
+chargerCatalogueAleatoire();
+</script>
+</body>
+</html>
